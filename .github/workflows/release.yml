@@ -2,9 +2,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to deploy (replace + with -)'
+        description: 'Version to deploy'
         required: true
-        default: 'v1.28.11-rke2r1'
+        default: 'v1.28.11+rke2r1'
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -56,9 +56,9 @@ jobs:
       env:
         TAG: ${{ github.event.inputs.version }}
       run: |
-        DOCKER_IMAGE=`echo ${REGISTRY}/${IMAGE_NAME} | tr '[:upper:]' '[:lower:]' 
+        DOCKER_IMAGE=`echo ${REGISTRY}/${IMAGE_NAME} | tr '[:upper:]' '[:lower:]'`
 
-        TAGS="${DOCKER_IMAGE}:${TAG}" | tr '+' '-'`
+        TAGS=`echo ${DOCKER_IMAGE}:${TAG} | tr '+' '-'`
 
         echo "version=${VERSION}" >> $GITHUB_OUTPUT
         echo "docker_image=${DOCKER_IMAGE}" >> $GITHUB_OUTPUT
