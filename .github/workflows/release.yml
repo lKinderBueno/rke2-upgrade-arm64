@@ -13,10 +13,12 @@ env:
   IMAGE_NAME: ${{ github.actor }}/rke2-upgrade
 
 
-name: tag
+name: Compile
 permissions:
-    contents: write
-    id-token: write
+  contents: write
+  id-token: write
+
+
 jobs:
   publish-rke2-upgrade:
     runs-on: ubuntu-latest
@@ -94,7 +96,3 @@ jobs:
             ARCH=${{ matrix.arch }}
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.prep.outputs.tags }}
-        cache-from: type=registry,ref=${{ steps.prep.outputs.docker_image }}:buildcache
-        cache-to: type=registry,ref=${{ steps.prep.outputs.docker_image }}:buildcache,mode=max
-
-
