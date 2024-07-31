@@ -9,35 +9,66 @@ permissions:
 jobs:
   publish-rke2-upgrade:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+        include:
+          - platform: linux/amd64
+            arch: amd64
+          - platform: linux/arm64
+            arch: arm64
+
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Change Tag
-      run: |
-        echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
-
-    - name: "Read secrets"
-      uses: rancher-eio/read-vault-secrets@main
+    - name: Repo metadata
+      id: repo
+      uses: actions/github-script@v7
       with:
-        secrets: |
-          secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
-          secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials password | DOCKER_PASSWORD ;
+        script: |
+          return context.repo.repo
     
-    - name: Login to Container Registry
+    #Generate version tag based on timestamp
+    - name: Prepare & Generate Tag
+      id: prep
+      run: |
+        DOCKER_IMAGE=`echo ${REGISTRY}/${IMAGE_NAME} | tr '[:upper:]' '[:lower:]'`
+
+        TAGS="${DOCKER_IMAGE}:${{ env.GIT_TAG }}"
+
+        echo "docker_image=${DOCKER_IMAGE}" >> $GITHUB_OUTPUT
+        echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
+        echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+        echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+      
+      #Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+    - name: Login to ghcr.io
       uses: docker/login-action@v3
       with:
-        username: ${{ env.DOCKER_USERNAME }}
-        password: ${{ env.DOCKER_PASSWORD }}
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build container image
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+  
+
+    # Build and push Docker image with Buildx (don't push on PR)
+    # https://github.com/docker/build-push-action
+    - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
-        push: true
-        tags: rancher/rke2-upgrade:${{ env.GIT_TAG }}
+        platforms: ${{ matrix.platform }}
         file: Dockerfile
-        platforms: linux/amd64
         build-args: |
-          TAG=${{ github.ref_name }}
-          ARCH=amd64
+            TAG=${{ github.ref_name }}
+            ARCH=${{ matrix.arch }}
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.prep.outputs.tags }}
+        cache-from: type=registry,ref=${{ steps.prep.outputs.docker_image }}:buildcache
+        cache-to: type=registry,ref=${{ steps.prep.outputs.docker_image }}:buildcache,mode=max
+
+
