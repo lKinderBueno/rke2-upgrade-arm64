@@ -47,6 +47,7 @@ jobs:
       env:
         TAG: ${{ github.event.inputs.version }}
       run: |
+        IMAGE_NAME="rke2-upgrade"
         DOCKER_IMAGE=`echo ${REGISTRY}/${IMAGE_NAME} | tr '[:upper:]' '[:lower:]'`
 
         TAGS="${DOCKER_IMAGE}:${TAG}"
