@@ -6,6 +6,13 @@ on:
         required: true
         default: 'v1.28.11+rke2r1'
 
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.actor }}/rke2-upgrade
+
+
 name: tag
 permissions:
     contents: write
@@ -47,7 +54,6 @@ jobs:
       env:
         TAG: ${{ github.event.inputs.version }}
       run: |
-        IMAGE_NAME="rke2-upgrade"
         DOCKER_IMAGE=`echo ${REGISTRY}/${IMAGE_NAME} | tr '[:upper:]' '[:lower:]'`
 
         TAGS="${DOCKER_IMAGE}:${TAG}"
