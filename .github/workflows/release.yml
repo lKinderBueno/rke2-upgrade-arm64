@@ -56,9 +56,9 @@ jobs:
       env:
         TAG: ${{ github.event.inputs.version }}
       run: |
-        DOCKER_IMAGE=`echo ${REGISTRY}/${IMAGE_NAME} | tr '[:upper:]' '[:lower:]'`
+        DOCKER_IMAGE=`echo ${REGISTRY}/${IMAGE_NAME} | tr '[:upper:]' '[:lower:]' 
 
-        TAGS="${DOCKER_IMAGE}:${TAG}"
+        TAGS="${DOCKER_IMAGE}:${TAG}" | tr '+' '-'`
 
         echo "version=${VERSION}" >> $GITHUB_OUTPUT
         echo "docker_image=${DOCKER_IMAGE}" >> $GITHUB_OUTPUT
@@ -93,7 +93,7 @@ jobs:
         platforms: ${{ matrix.platform }}
         file: Dockerfile
         build-args: |
-            TAG=${{ github.ref_name }}
+            TAG=${{ github.event.inputs.version }}
             ARCH=${{ matrix.arch }}
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.prep.outputs.tags }}
