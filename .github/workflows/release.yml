@@ -2,9 +2,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to deploy'
+        description: 'Version to deploy (replace + with -)'
         required: true
-        default: 'v1.28.11+rke2r1'
+        default: 'v1.28.11-rke2r1'
 
 env:
   # Use docker.io for Docker Hub if empty
